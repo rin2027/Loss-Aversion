@@ -296,6 +296,15 @@ header {
   display: flex;
   align-items: center;
   gap: 1rem;
+  position: sticky;
+  bottom: 0;
+  background: var(--bg);
+  padding: .8rem 0;
+  border-top: 1px solid var(--border);
+  margin-top: 1rem;
+  /* PCでは見た目を変えない */
+  backdrop-filter: blur(6px);
+  z-index: 10;
 }
 .hint-text {
   flex: 1;

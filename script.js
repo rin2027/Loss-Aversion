@@ -3,38 +3,43 @@ const QUESTIONS = [
   // Phase 1: 利得フレーム ── 確実利得 vs 期待値がわずかに高いリスク
   { id:1,  phase:'gain',  phaseLabel:'フェーズ1：利得フレーム',
     safe:  { icon:'💴', main:'¥1,000', sub:'確実にもらえる', gainFixed:1000 },
-    risky: { icon:'🎲', main:'50 / 50', sub:'コインを投げる', gain:2200, loss:0 } },
+    risky: { icon:'🪙', main:'コインを投げる', sub:'50%の確率で表と裏がそれぞれ出る', gain:2200, loss:0 } },
   { id:2,  phase:'gain',  phaseLabel:'フェーズ1：利得フレーム',
     safe:  { icon:'💴', main:'¥1,000', sub:'確実にもらえる', gainFixed:1000 },
-    risky: { icon:'🎲', main:'50 / 50', sub:'コインを投げる', gain:2500, loss:0 } },
+    risky: { icon:'🪙', main:'コインを投げる', sub:'50%の確率で表と裏がそれぞれ出る', gain:2500, loss:0 } },
   { id:3,  phase:'gain',  phaseLabel:'フェーズ1：利得フレーム',
     safe:  { icon:'💴', main:'¥1,000', sub:'確実にもらえる', gainFixed:1000 },
-    risky: { icon:'🎲', main:'50 / 50', sub:'コインを投げる', gain:3000, loss:0 } },
+    risky: { icon:'🪙', main:'コインを投げる', sub:'50%の確率で表と裏がそれぞれ出る', gain:3000, loss:0 } },
   { id:4,  phase:'gain',  phaseLabel:'フェーズ1：利得フレーム',
     safe:  { icon:'💴', main:'¥1,000', sub:'確実にもらえる', gainFixed:1000 },
-    risky: { icon:'🎲', main:'50 / 50', sub:'コインを投げる', gain:4000, loss:0 } },
+    risky: { icon:'🪙', main:'コインを投げる', sub:'50%の確率で表と裏がそれぞれ出る', gain:4000, loss:0 } },
   // Phase 2: 混合フレーム ── 現状維持 vs 損得賭け（損失回避テスト）
   { id:5,  phase:'mixed', phaseLabel:'フェーズ2：損失回避テスト',
     safe:  { icon:'🛡️', main:'現状維持', sub:'何もしない（±0円）', gainFixed:0 },
-    risky: { icon:'🎲', main:'50 / 50', sub:'コインを投げる', gain:2500, loss:1000 } },
+    risky: { icon:'🪙', main:'コインを投げる', sub:'50%の確率で表と裏がそれぞれ出る', gain:2500, loss:1000 } },
   { id:6,  phase:'mixed', phaseLabel:'フェーズ2：損失回避テスト',
     safe:  { icon:'🛡️', main:'現状維持', sub:'何もしない（±0円）', gainFixed:0 },
-    risky: { icon:'🎲', main:'50 / 50', sub:'コインを投げる', gain:2000, loss:1000 } },
+    risky: { icon:'🪙', main:'コインを投げる', sub:'50%の確率で表と裏がそれぞれ出る', gain:2000, loss:1000 } },
   { id:7,  phase:'mixed', phaseLabel:'フェーズ2：損失回避テスト',
     safe:  { icon:'🛡️', main:'現状維持', sub:'何もしない（±0円）', gainFixed:0 },
-    risky: { icon:'🎲', main:'50 / 50', sub:'コインを投げる', gain:1500, loss:1000 } },
+    risky: { icon:'🪙', main:'コインを投げる', sub:'50%の確率で表と裏がそれぞれ出る', gain:1500, loss:1000 } },
   { id:8,  phase:'mixed', phaseLabel:'フェーズ2：損失回避テスト',
     safe:  { icon:'🛡️', main:'現状維持', sub:'何もしない（±0円）', gainFixed:0 },
-    risky: { icon:'🎲', main:'50 / 50', sub:'コインを投げる', gain:1000, loss:1000 } },
+    risky: { icon:'🪙', main:'コインを投げる', sub:'50%の確率で表と裏がそれぞれ出る', gain:1000, loss:1000 } },
 ];
 
 // ── 状態 ──────────────────────────────────────────────
 let currentQ = 0;
 let answers  = new Array(8).fill(null); // 'safe' | 'risky'
+let showingIntro = true;
 
 // ── メインレンダ ──────────────────────────────────────
 function render() {
   const app = document.getElementById('app');
+  if (showingIntro) {
+    renderIntro();
+    return;
+  }
   if (currentQ >= QUESTIONS.length) {
     renderResults(app);
     return;
@@ -76,10 +81,15 @@ function render() {
       <div class="choices">
         <div class="choice-card safe-card ${ans === 'safe' ? 'selected' : ''}" onclick="choose('safe')">
           <div class="check-mark">✓</div>
-          <div class="choice-type">🛡 安全な選択肢</div>
+          <div class="choice-type">🛡️ 安全な選択肢</div>
           <span class="choice-icon">${q.safe.icon}</span>
           <div class="choice-main">${q.safe.main}</div>
           <div class="choice-sub">${q.safe.sub}</div>
+          <div class="choice-outcome">
+            <span class="outcome-gain">
+                期待値 = ¥${q.safe.gainFixed.toLocaleString()}（確実）
+            </span>
+            </div>
         </div>
         <div class="choice-card risky-card ${ans === 'risky' ? 'selected' : ''}" onclick="choose('risky')">
           <div class="check-mark">✓</div>
@@ -108,8 +118,81 @@ function choose(c) {
   render();
 }
 
+let showingBreak = false;
+
 function nextQ() {
   if (!answers[currentQ]) return;
+  // Q4（index=3）を終えた直後だけ中間画面を挟む
+  if (currentQ === 3 && !showingBreak) {
+    showingBreak = true;
+    renderBreak();
+    return;
+  }
+  showingBreak = false;
+  currentQ++;
+  render();
+}
+
+function renderIntro() {
+  document.getElementById('app').innerHTML = `
+    <div class="question-card" style="padding:2.5rem 1.8rem;">
+      <div style="text-align:center; margin-bottom:1.8rem;">
+        <div style="font-size:3rem; margin-bottom:.8rem;">🪙</div>
+        <div style="font-family:'Playfair Display',serif; font-size:1.25rem;
+                    font-weight:600; line-height:1.4;">
+          実験を始める前に
+        </div>
+      </div>
+      <p style="font-size:.87rem; color:var(--ink-mid); line-height:2; margin-bottom:1.2rem;">
+        この実験では、<strong style="color:var(--ink)">8つの選択問題</strong>を通じて、
+        あなたがどれだけ「損失」を恐れているかを測定します。
+      </p>
+      <div style="background:var(--bg); border-radius:10px; padding:1rem 1.2rem;
+                  margin-bottom:1.2rem; font-size:.83rem; line-height:2; color:var(--ink-mid);">
+        <div style="font-weight:600; color:var(--ink); margin-bottom:.4rem;">📋 実験の流れ</div>
+        <div>🟢 <strong style="color:var(--safe)">フェーズ１（Q1〜4）</strong>：
+          確実な利得 vs コインを投げる賭け</div>
+        <div>🟠 <strong style="color:var(--risky)">フェーズ２（Q5〜8）</strong>：
+          現状維持 vs 獲得・損失がある賭け</div>
+      </div>
+      <div style="background:var(--risky-bg); border:1px solid var(--risky-border);
+                  border-radius:10px; padding:1rem 1.2rem; margin-bottom:1.8rem;
+                  font-size:.83rem; line-height:1.9; color:var(--ink-mid);">
+        <div style="font-weight:600; color:var(--risky); margin-bottom:.3rem;">⚠️ 注意事項</div>
+        これは仮想シナリオです。実際のお金のやり取りは発生しません。<br>
+        直感的に、正直に答えてください。正解・不正解はありません。
+      </div>
+      <button class="btn btn-primary" style="width:100%; padding:.9rem;"
+              onclick="startExperiment()">
+        フェーズ１の実験に移る →
+      </button>
+    </div>
+  `;
+}
+
+function startExperiment() {
+  showingIntro = false;
+  render();
+}
+
+function renderBreak() {
+  document.getElementById('app').innerHTML = `
+    <div class="question-card" style="text-align:center; padding:2.5rem 1.8rem;">
+      <div style="font-size:2.5rem; margin-bottom:1rem;">🔄</div>
+      <div style="font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:600; margin-bottom:.8rem;">
+        フェーズ2へ進みます
+      </div>
+      <p style="font-size:.85rem; color:var(--ink-mid); line-height:1.9; margin-bottom:1.6rem;">
+        ここからは「<strong>損失回避テスト</strong>」です。<br>
+        現状維持（±0円）か、獲得と損失が両方ある賭けか、どちらを選ぶか答えてください。<br>
+        賭けの期待値はすべてプラスですが、損失の可能性があります。
+      </p>
+      <button class="btn btn-primary" onclick="proceedFromBreak()">フェーズ２の実験に移る →</button>
+    </div>`;
+}
+
+function proceedFromBreak() {
+  showingBreak = false;
   currentQ++;
   render();
 }
@@ -152,6 +235,13 @@ function lambdaVerdict(min) {
   if (min >= 1.5) return '軽度の損失回避傾向があります';
   if (min >= 1.0) return '損失回避はやや低めです';
   return 'リスク選好的で、損失回避バイアスは低いようです';
+}
+
+function lambdaMidValue(min, max) {
+  if (min === 0)  return '1未満';
+  if (max >= 4.5) return '2.5倍以上';
+  const mid = ((min + max) / 2).toFixed(1);
+  return `約${mid}倍`;
 }
 
 function meterPos(min, max) {
@@ -201,7 +291,21 @@ function renderResults(app) {
         <div class="h2">あなたの損失回避係数</div>
         <div class="lambda-display">${disp}</div>
         <div class="lambda-label">推定 Lambda（プロスペクト理論）</div>
-        <div class="lambda-verdict">${verdict}</div>
+        <div style="
+        font-size: 1.05rem;
+        color: rgba(255,255,255,0.9);
+        margin: .6rem 0 .3rem;
+        font-family: 'Noto Sans JP', sans-serif;
+        font-weight: 500;
+        line-height: 1.6;
+        ">
+        あなたは損失を利得の
+        <em style="color:var(--gold); font-style:normal; font-size:1.4rem; font-weight:700;">
+        ${lambdaMidValue(lambdaMin, lambdaMax)}
+        </em>
+        に感じる傾向があります
+        </div>
+       <div class="lambda-verdict">${verdict}</div>
       </div>
 
       <div class="meter-section">
@@ -262,6 +366,8 @@ function renderResults(app) {
 function restart() {
   currentQ = 0;
   answers  = new Array(8).fill(null);
+  showingIntro = true;
+  showingBreak = false;
   render();
 }
 
